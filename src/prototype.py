@@ -9,7 +9,13 @@ def finite(a,ndim=None):
  return a
 def process(target,dt=.005,kp=.035,ki=.08,max_torque=.3):
  target=finite(target,1)
- if dt<=0 or kp<0 or ki<0 or max_torque<=0: raise ValueError('Invalid controller parameters')
+ try:
+  if any(np.ndim(value) != 0 for value in (dt,kp,ki,max_torque)):
+   raise ValueError('Controller parameters must be finite scalars')
+  dt,kp,ki,max_torque = map(float,(dt,kp,ki,max_torque))
+ except (TypeError,ValueError,OverflowError) as error:
+  raise ValueError('Controller parameters must be finite scalars') from error
+ if not np.isfinite([dt,kp,ki,max_torque]).all() or dt<=0 or kp<0 or ki<0 or max_torque<=0: raise ValueError('Invalid controller parameters')
  speed=0.;integral=0.;speeds=[];torques=[]
  for reference in target:
   error=reference-speed;trial=integral+error*dt;requested=kp*error+ki*trial
